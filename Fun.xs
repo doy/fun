@@ -155,6 +155,7 @@ static OP *THX_parse_function_prototype(pTHX)
 {
     OP *myvars, *defaults, *get_args, *arg_assign;
     IV i = 0;
+    SV *seen_slurpy = NULL;
 
     demand_unichar('(', DEMAND_IMMEDIATE);
 
@@ -176,19 +177,30 @@ static OP *THX_parse_function_prototype(pTHX)
         lex_read_space(0);
         next = lex_peek_unichar(0);
         if (next == '$') {
-            pad_op = newOP(OP_PADSV, 0);
             name = parse_scalar_varname();
+            if (seen_slurpy) {
+                croak("Can't declare parameter %"SVf" after slurpy parameter %"SVf, name, seen_slurpy);
+            }
+            pad_op = newOP(OP_PADSV, 0);
             pad_op->op_targ = pad_add_my_scalar_sv(name);
         }
         else if (next == '@') {
-            pad_op = newOP(OP_PADAV, 0);
             name = parse_array_varname();
+            if (seen_slurpy) {
+                croak("Can't declare parameter %"SVf" after slurpy parameter %"SVf, name, seen_slurpy);
+            }
+            pad_op = newOP(OP_PADAV, 0);
             pad_op->op_targ = pad_add_my_array_sv(name);
+            seen_slurpy = name;
         }
         else if (next == '%') {
-            pad_op = newOP(OP_PADHV, 0);
             name = parse_hash_varname();
+            if (seen_slurpy) {
+                croak("Can't declare parameter %"SVf" after slurpy parameter %"SVf, name, seen_slurpy);
+            }
+            pad_op = newOP(OP_PADHV, 0);
             pad_op->op_targ = pad_add_my_hash_sv(name);
+            seen_slurpy = name;
         }
         else {
             croak("syntax error");
