@@ -1,6 +1,8 @@
 Revision history for Fun
 
 {{$NEXT}}
+      - make function parameters read-write again
+      - fix error when closing over a variable from a named function
 
 0.04  2012-09-08
       - fix test for Carp <1.26
